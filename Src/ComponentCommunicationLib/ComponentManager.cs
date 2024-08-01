@@ -75,7 +75,17 @@ namespace ComponentCommunicationLib
         public async Task SendMessageAsync(MessagePayload payload)
         {
             await _hubConnection.SendAsync("SendMessageToComponent", payload);
-        } 
+        }
+
+        /// <summary>
+        /// Get a dependent component by its ID
+        /// </summary>
+        /// <param name="componentId"></param>
+        /// <returns></returns>
+        public DependentComponent GetDependentComponentById(string componentId)
+        {
+            return _dependentComponents.FirstOrDefault(c => c.ComponentId == componentId);
+        }
         #endregion
 
         #region EventHandler
