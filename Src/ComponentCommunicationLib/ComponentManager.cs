@@ -20,9 +20,16 @@ namespace ComponentCommunicationLib
         private readonly HubConnection _hubConnection;
         private readonly string _hubUrl;
         private readonly string _coreComponentId = "CoreComponent";
-        public string CoreComponentId { get { 
+        PriorityQueue<MessagePayload, int> corePriorityQueue = new PriorityQueue<MessagePayload, int>();
+        Dictionary<string, PriorityQueue<MessagePayload, int>> dicPriorityQueue = new Dictionary<string, PriorityQueue<MessagePayload, int>>();
+        bool _processQueue = false;
+        public string CoreComponentId
+        {
+            get
+            {
                 return _coreComponentId;
-            } }
+            }
+        }
         public int NumbersOfDependentComponent { get; private set; }
 
         #region Constructor
@@ -35,10 +42,10 @@ namespace ComponentCommunicationLib
              .WithUrl(hubUrl)
             .Build();
 
-            _hubConnection.On<MessagePayload>("ReceiveMessage", HandleMessage);
+            _hubConnection.On<MessagePayload>("ReceiveMessage", EnqueuePayload);
 
             CreateDependentComponents();
-        } 
+        }
         #endregion
 
         #region Public
@@ -51,6 +58,9 @@ namespace ComponentCommunicationLib
             {
                 await component.StartAsync();
             }
+            _processQueue = true;
+            dicPriorityQueue.Add(CoreComponentId, corePriorityQueue);
+            _startProcessingQueue();
         }
 
         public async Task StopAllComponentsAsync()
@@ -61,6 +71,7 @@ namespace ComponentCommunicationLib
             {
                 await component.StopAsync();
             }
+            _processQueue = false;
         }
 
         public async Task SendMessageToAllDependentComponentsAsync(MessagePayload message)
@@ -89,9 +100,14 @@ namespace ComponentCommunicationLib
         #endregion
 
         #region EventHandler
-        private async Task HandleMessage(MessagePayload payload)
+        private async Task EnqueuePayload(MessagePayload payload)
         {
-            Console.WriteLine(JsonConvert.SerializeObject(payload));
+            await Task.Run(() =>
+            {
+                Console.WriteLine(JsonConvert.SerializeObject(payload));
+                if (payload == null) return;
+                corePriorityQueue.Enqueue(payload, (int)payload.Priority);
+            });
         }
         #endregion
 
@@ -100,11 +116,38 @@ namespace ComponentCommunicationLib
         {
             for (int i = 1; i <= NumbersOfDependentComponent; i++)
             {
+                PriorityQueue<MessagePayload, int> priorityQueue = new PriorityQueue<MessagePayload, int>();
                 var componentId = $"Dep_Component{i}";
-                var component = new DependentComponent(_hubUrl, componentId);
+                var component = new DependentComponent(_hubUrl, componentId, priorityQueue);
                 _dependentComponents.Add(component);
+                dicPriorityQueue.Add(componentId, priorityQueue);
             }
-        } 
+        }
+
+        private async Task _startProcessingQueue()
+        {
+            while (_processQueue)
+            {
+                while (corePriorityQueue.Count > 0)
+                {
+                    if (!_processQueue)
+                        break;
+                    var payload = corePriorityQueue.Dequeue();
+                    await HandleResponse(payload);
+                }
+                Thread.Sleep(1000); // wait for one second and start processing again.
+            }
+        }
+
+        private async Task HandleResponse(MessagePayload payload)
+        {
+            // can further modify to handle different states
+            await Task.Run(() =>
+            {
+                Console.WriteLine(JsonConvert.SerializeObject(payload));
+                return Task.CompletedTask;
+            });
+        }
         #endregion
     }
 }

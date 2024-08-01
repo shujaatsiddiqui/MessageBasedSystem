@@ -13,7 +13,7 @@ namespace MessageBasedService.Model
         public string Payload { get; set; }
         public Error Error { get; set; }
         public State State { get; set; }
-        public string Priority { get; set; }
+        public Priority Priority { get; set; }
         public MessageCommandType CommandType { get; set; }
     }
 
@@ -59,8 +59,8 @@ namespace MessageBasedService.Model
 
     public enum Priority
     {
-        Low = 0,
-        High = 1
+        Low = 1,
+        High = 0
     }
 
     public enum MessageCommandType
