@@ -36,7 +36,7 @@ namespace ComponentCommunicationLib
         public ComponentManager(string hubUrl, int numbersOfDependentComponent)
         {
             _hubUrl = hubUrl;
-            NumbersOfDependentComponent = Math.Max(numbersOfDependentComponent, 3); // Ensure minimum value is 3
+            NumbersOfDependentComponent = Math.Max(numbersOfDependentComponent, 3);
 
             _hubConnection = new HubConnectionBuilder()
              .WithUrl(hubUrl)
@@ -60,7 +60,7 @@ namespace ComponentCommunicationLib
             }
             _processQueue = true;
             dicPriorityQueue.Add(CoreComponentId, corePriorityQueue);
-            _startProcessingQueue();
+            Task.Run(() => { _startProcessingQueueAsync(); }); 
         }
 
         public async Task StopAllComponentsAsync()
@@ -104,7 +104,7 @@ namespace ComponentCommunicationLib
         {
             await Task.Run(() =>
             {
-                Console.WriteLine(JsonConvert.SerializeObject(payload));
+                //Console.WriteLine(JsonConvert.SerializeObject(payload));
                 if (payload == null) return;
                 corePriorityQueue.Enqueue(payload, (int)payload.Priority);
             });
@@ -124,7 +124,7 @@ namespace ComponentCommunicationLib
             }
         }
 
-        private async Task _startProcessingQueue()
+        private async Task _startProcessingQueueAsync()
         {
             while (_processQueue)
             {
@@ -135,7 +135,7 @@ namespace ComponentCommunicationLib
                     var payload = corePriorityQueue.Dequeue();
                     await HandleResponse(payload);
                 }
-                Thread.Sleep(1000); // wait for one second and start processing again.
+                await Task.Delay(1000); // wait for one second and start processing again.
             }
         }
 

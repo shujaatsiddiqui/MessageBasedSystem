@@ -24,7 +24,7 @@ var componentManager = new ComponentManager(hubUrl, numbersOfDependentComponent)
 await componentManager.StartAllComponentsAsync();
 
 //Console.WriteLine("All components started. You can send messages.");
-Thread.Sleep(3000);
+Thread.Sleep(1000);
 //wait for 3 seconds
 
 #region SendingMessageFromCoreToAllDepComp
@@ -41,23 +41,23 @@ payload.State = State.Completed;
 await componentManager.SendMessageToAllDependentComponentsAsync(payload);
 #endregion
 
-#region SendMessageDirectlyBetweenDepComponents
-var dependentComp1 = componentManager.GetDependentComponentById("Dep_Component1");
-// send message to dep component 2
-payload = new MessagePayload();
-payload.Header = new Header()
-{
-    CorrelationId = Guid.NewGuid().ToString(),
-    SenderId = dependentComp1.ComponentId,
-    RecipientId = "Dep_Component2",
-    MessageId = Guid.NewGuid().ToString()
-};
-payload.Payload = "Hi";
-//payload.CommandType = MessageCommandType.;
-payload.State = State.Completed;
+//#region SendMessageDirectlyBetweenDepComponents
+//var dependentComp1 = componentManager.GetDependentComponentById("Dep_Component1");
+//// send message to dep component 2
+//payload = new MessagePayload();
+//payload.Header = new Header()
+//{
+//    CorrelationId = Guid.NewGuid().ToString(),
+//    SenderId = dependentComp1.ComponentId,
+//    RecipientId = "Dep_Component2",
+//    MessageId = Guid.NewGuid().ToString()
+//};
+//payload.Payload = "Hi";
+////payload.CommandType = MessageCommandType.;
+//payload.State = State.Completed;
 
-await dependentComp1.SendMessageAsync(payload); 
-#endregion
+//await dependentComp1.SendMessageAsync(payload); 
+//#endregion
 
 
 //while (true)

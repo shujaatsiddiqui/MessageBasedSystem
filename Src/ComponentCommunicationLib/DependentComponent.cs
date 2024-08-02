@@ -27,7 +27,7 @@ namespace ComponentCommunicationLib
         {
             await Task.Run(() =>
             {
-                Console.WriteLine(JsonConvert.SerializeObject(payload));
+                //Console.WriteLine(JsonConvert.SerializeObject(payload));
                 if (payload == null) return;
                 _priorityQueue.Enqueue(payload, (int)payload.Priority);
             });
@@ -37,11 +37,11 @@ namespace ComponentCommunicationLib
         {
             await _hubConnection.StartAsync();
             await _hubConnection.SendAsync("RegisterComponent", _componentId);
-            await _startProcessingQueue();
             _processQueue = true;
+            Task.Run(() => { _startProcessingQueueAsync(); }); 
         }
 
-        private async Task _startProcessingQueue()
+        private async Task _startProcessingQueueAsync()
         {
             while (_processQueue)
             {
@@ -52,14 +52,16 @@ namespace ComponentCommunicationLib
                     var payload = _priorityQueue.Dequeue();
                     await HandleResponse(payload);
                 }
-                Thread.Sleep(1000); // wait for one second and start processing again.
+                await Task.Delay(1000); // wait for one second and start processing again.
             }
         }
 
         private async Task HandleResponse(MessagePayload payload)
         {
+            Console.WriteLine(JsonConvert.SerializeObject(payload));
             if (payload.State == State.Completed)
             {
+
                 //var recipientId = payload.Header.SenderId;
                 MessagePayload messagePayload = new MessagePayload();
                 messagePayload.Header = new Header(payload.Header.CorrelationId);
